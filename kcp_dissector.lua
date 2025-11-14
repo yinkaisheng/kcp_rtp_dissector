@@ -1,6 +1,6 @@
 -- author: yinkaisheng@live.com
 -- for decoding kcp udp msg
-require "bit32"
+--require "bit" -- if lua <= 5.2
 
 do
     kcp_parse_table = { }
@@ -94,20 +94,20 @@ do
         local ssrc_index = start+msg_header_size + 8
         local indicator_index = start+msg_header_size + 12--rtp head 12
         local second_byte_value = buf(payload_index, 1):uint()
-        local rtp_payload = bit32.band(second_byte_value, 0x7F)-- or second_byte_value >> 1 -- require lua 5.3
-        local rtp_marker = bit32.rshift(second_byte_value, 7)-- or second_byte_value & 1 -- require lua 5.3
+        local rtp_payload = second_byte_value & 0x7F --bit.band(second_byte_value, 0x7F)
+        local rtp_marker = second_byte_value >> 7 --bit.rshift(second_byte_value, 7)
         local rtp_seqno = buf(seqno_index, 2):uint()
         local rtp_timestamp = buf(timestamp_index, 4):uint()
         local rtp_ssrc = buf(ssrc_index, 4):uint()
         local indicator = buf(indicator_index, 1):uint()
-        local indicator_type = bit32.band(indicator, 0x1F)
+        local indicator_type = indicator & 0x1F --bit.band(indicator, 0x1F)
         local fu_start = 0
         local fu_end = 0
         if indicator_type == 28 then
             local fuheader_index = indicator_index + 1
             local fuheader = buf(fuheader_index, 1):uint()
-            fu_start = bit32.rshift(fuheader, 7)
-            fu_end = bit32.band(bit32.rshift(fuheader, 6), 1)
+            fu_start = fuheader >> 7 --bit.rshift(fuheader, 7)
+            fu_end = (fuheader >> 6) & 1 --bit.band(bit.rshift(fuheader, 6), 1)
         end
         protocol_name = tostring(pkt.cols.protocol)
         if protocol_name ~= kcp_video_protocol_name then
